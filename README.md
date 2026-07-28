@@ -2,7 +2,7 @@
 
 I built this lab to practise the work a detection engineer actually does. Not just installing an IDS, but getting its telemetry into a SIEM, writing rules that fire on real attack traffic, proving they work, and deciding what to do about the noise that shows up along the way.
 
-Suricata 8 runs on an isolated VirtualBox network and ships EVE JSON to Splunk Enterprise through a Universal Forwarder. On top of that sit three dashboards, four custom detections covering four ATT&CK tactics, and a correlation search that ties them together.
+Suricata 8 runs on an isolated VirtualBox network and ships EVE JSON to Splunk Enterprise through a Universal Forwarder. On top of that sit three dashboards, seven custom detections covering seven ATT&CK tactics, and a correlation search that ties them together.
 
 One rule I kept to throughout: investigate before tuning. Twice something unexpected showed up in the data, and both times I stopped building and worked out why before changing anything.
 
@@ -39,7 +39,7 @@ More detail in [docs/architecture.md](docs/architecture.md).
 
 **A validated telemetry pipeline.** Capture through to indexed, searchable JSON, with timestamps and nested field extraction checked against raw `eve.json` before I built anything on top of it. I measured the end to end latency rather than assuming it.
 
-**Four custom Suricata detections** covering reconnaissance, initial access, execution and discovery. Each one has a writeup covering the research behind it, the rule logic and its trade-offs, how I validated it, and how an analyst would triage the alert. They live in [detections/](detections/).
+**Seven custom Suricata detections** tracing an attacker from reconnaissance through initial access, credential access, execution, command and control, discovery, and persistence. Each one has a writeup covering the research behind it, the rule logic and its trade-offs, how I validated it, and how an analyst would triage the alert. They live in [detections/](detections/).
 
 **A correlation search** that scores attacker progression across stages instead of counting alerts, so it stays quiet during the noisy periods that dominate this environment. See [COR-001](detections/COR-001-recon-to-exploit-chain.md).
 
@@ -61,12 +61,15 @@ More detail in [docs/architecture.md](docs/architecture.md).
 
 | ID | Detection | SID | ATT&CK | Tactic |
 |---|---|---|---|---|
-| [DET-001](detections/DET-001-sql-injection.md) | SQL injection, UNION SELECT in URI | 1000002 | T1190 | Initial Access |
-| [DET-002](detections/DET-002-command-injection.md) | Command injection, shell metacharacter in URI | 1000003 | T1059 | Execution |
-| [DET-003](detections/DET-003-directory-traversal.md) | Directory traversal and LFI | 1000004 | T1083 | Discovery |
 | [DET-004](detections/DET-004-suspicious-user-agent.md) | Suspicious user agent, known attack tooling | 1000005 | T1595.002 | Reconnaissance |
+| [DET-001](detections/DET-001-sql-injection.md) | SQL injection, UNION SELECT in URI | 1000002 | T1190 | Initial Access |
+| [DET-007](detections/DET-007-brute-force.md) | Login brute force, rate based | 1000008 | T1110 | Credential Access |
+| [DET-002](detections/DET-002-command-injection.md) | Command injection, shell metacharacter in URI | 1000003 | T1059 | Execution |
+| [DET-005](detections/DET-005-reverse-shell.md) | Reverse shell payload in HTTP | 1000006 | T1059 / T1071 | Execution / C2 |
+| [DET-003](detections/DET-003-directory-traversal.md) | Directory traversal and LFI | 1000004 | T1083 | Discovery |
+| [DET-006](detections/DET-006-web-shell.md) | Web shell access | 1000007 | T1505.003 | Persistence |
 
-All four are deployed and confirmed firing on live attack traffic. Every rule went through the same cycle: research, design, write, validate with `suricata -T`, simulate the attack, confirm the alert in Splunk, map to ATT&CK, then decide on tuning. Full ATT&CK coverage in [docs/mitre-mapping.md](docs/mitre-mapping.md).
+All seven are deployed and confirmed firing on live attack traffic, tracing an attacker from the first scan through to a web shell dropped for persistence. Every rule went through the same cycle: research, design, write, validate with `suricata -T`, simulate the attack, confirm the alert in Splunk, map to ATT&CK, then decide on tuning. Full ATT&CK coverage in [docs/mitre-mapping.md](docs/mitre-mapping.md).
 
 ## Things worth reading
 

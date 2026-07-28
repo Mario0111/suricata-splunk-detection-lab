@@ -33,3 +33,13 @@ alert http any any -> $HOME_NET any (msg:"LOCAL WEB Directory Traversal - Sensit
 # curl and python-requests are excluded on purpose, since both appear in
 # legitimate automation and in my own attack simulations.
 alert http any any -> $HOME_NET any (msg:"LOCAL WEB Suspicious User-Agent - Known Attack Tool"; flow:to_server,established; http.user_agent; pcre:"/(?:sqlmap|nikto|nmap|masscan|metasploit|dirbuster|gobuster|wpscan|hydra|nuclei|zgrab)/i"; classtype:web-application-attack; sid:1000005; rev:1;)
+
+# 1000006: reverse shell payload in HTTP request. T1059 / T1071.
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Reverse Shell Payload in HTTP Request"; flow:to_server,established; http.uri; pcre:"/(?:\/dev\/tcp\/|\bmkfifo\b|nc(?:\s|%20|\+)+(?:-e|-c)|bash(?:\s|%20|\+)+-i|python[0-9]?(?:\s|%20|\+)+-c)/i"; classtype:trojan-activity; sid:1000006; rev:1;)
+
+# 1000007: web shell access, known shell filenames. T1505.003.
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Web Shell Access"; flow:to_server,established; http.uri; pcre:"/(?:c99|r57|wso|b374k|c100|r0nin|[a-z0-9_-]*shell|backdoor|bindshell)\.(?:php|asp|aspx|jsp)\b/i"; classtype:trojan-activity; sid:1000007; rev:1;)
+
+# 1000008: login brute force, rate-based via detection_filter. T1110.
+# Fires only after 20 POSTs to a login URI from one source within 60 seconds.
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Login Brute Force Attempt"; flow:to_server,established; http.method; content:"POST"; http.uri; content:"login"; nocase; detection_filter:track by_src, count 20, seconds 60; classtype:attempted-user; sid:1000008; rev:1;)
