@@ -52,9 +52,30 @@ index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id=10000
 
 The alert came through with the traversal sequence visible in `http.url`.
 
-One thing to be honest about here. I sent this at the web root, which does not process a `file` parameter, so `/etc/passwd` was never returned and the server just served its default page. The rule fired on the attempt, which is the right behaviour for request side inspection, but this run demonstrates detection of an attempt rather than a successful file read.
+The first time I ran this I aimed it at the web root, which does not process a `file` parameter, so `/etc/passwd` was never returned and the server served its default page. The rule fired on the attempt, which is the right behaviour for request side inspection, but that run only demonstrated detection of an attempt, not a successful read.
 
-That distinction is real and worth keeping straight. The rule's job is to tell you someone tried. Whether they succeeded needs the response, and that is analyst work rather than something a signature can answer. Sending the same payload at Mutillidae's actual LFI sink, `index.php?page=`, would return the contents of `/etc/passwd` in the response body and show the full picture.
+So I ran it again against a real sink, Mutillidae's `page` parameter, which is genuinely vulnerable to local file inclusion:
+
+```bash
+curl -s "http://10.10.10.20/mutillidae/index.php?page=../../../../../../etc/passwd" | grep ":x:" | head -20
+```
+
+This time the victim returned the file. The response body contained Metasploitable's actual `/etc/passwd`, including the privileged accounts:
+
+```
+root:x:0:0:root:/root:/bin/bash
+...
+msfadmin:x:1000:1000:msfadmin,,,:/home/msfadmin:/bin/bash
+mysql:x:109:118:MySQL Server,,,:/var/lib/mysql:/bin/false
+```
+
+![Leaked /etc/passwd from the LFI](../screenshots/det-003-lfi-impact.png)
+
+The same rule fired on this request as well, on the `../` and the `etc/passwd` in the URI:
+
+![Directory traversal alert in Splunk](../screenshots/det-003-lfi-alert.png)
+
+The two runs together make the distinction concrete. Against the web root the rule detected an attempt that could not succeed. Against Mutillidae it detected an attempt that did succeed and disclosed the password file. The rule output was identical in both cases, because the rule only reports what crossed the wire. Whether the attempt actually read a file is answered by the response, and that is analyst work, not something a request side signature can decide. That is the whole reason the triage notes below lead with response size.
 
 ## Triage notes
 
