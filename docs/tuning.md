@@ -9,7 +9,8 @@ How I approach this: a suppression is an engineering decision, not a reflex. Eve
 | 2221036 | SURICATA HTTP Response excessive header repetition | 5,000+ | Benign Splunk Web self traffic | Tuning candidate, proposal below, not yet applied |
 | 2221050 | SURICATA HTTP too many warnings | 2 | Suricata HTTP parser, still under investigation | No tuning. Not enough evidence to act on |
 | 2069969 | ET Splunk REST API info disclosure (CVE-2018-11409) | 170 | Expected match on Splunk REST API interaction | Keep. Legitimate coverage and useful as a known good signal |
-| 1000002 to 1000005 | My custom detections | low | Attack simulation | No tuning. High signal, no false positives observed |
+| 1000003 | LOCAL WEB Command Injection | 8 FPs | `&id=` in Splunk URLs matched as "& id" | Rule corrected, `&` dropped from the class, rev:2. Section below |
+| 1000002, 1000004, 1000005 | My other custom detections | low | Attack simulation | No tuning. High signal, no false positives observed |
 
 ## Proposal for SID 2221036
 
@@ -33,6 +34,16 @@ suppress gen_id 1, sig_id 2221036, track by_dst, ip 10.10.10.40
 **Disable the rule.** Rejected. It removes the detection everywhere rather than just for the traffic that is actually benign, which is out of proportion to the problem.
 
 I would apply the first option, since it costs nothing and loses no data, and only move to the second if sensor side alert volume started affecting performance. When I apply one I will record it here with before and after counts.
+
+## SID 1000003: fixing the rule rather than suppressing it
+
+My own command injection rule produced false positives on legitimate Splunk traffic. Splunk's search API calls URLs like `...&id=<jobid>`, and the rule read the `&id=` as a backgrounded `id` command. Eight alerts against the Splunk server, all from my browser, none of them attacks. Full trace in [investigations.md](investigations.md#a-false-positive-the-correlation-search-forced-into-view).
+
+The decision here is different from SID 2221036 above, and the difference is the point. SID 2221036 is a correct rule firing on benign traffic, so the answer is a scoped suppression that leaves the rule intact for real targets. SID 1000003 was a wrong rule: `&id=` is a false positive on any host, not just my Splunk server, because `&` is a URL parameter separator and not a usable shell operator in a GET request. Suppressing it per host would have left the bad pattern in place everywhere else.
+
+So the fix was to correct the pattern, dropping `&` from the character class and bumping the rule to rev:2, not to suppress its output. Re-validated both ways: the real `;id` attack still fires, and Splunk searches no longer generate the alert. The detail is in [DET-002](../detections/DET-002-command-injection.md#tuning-removing-a-false-positive).
+
+The general rule I took from it: suppression is for benign traffic on a good rule, a pattern fix is for a bad rule. Reaching for suppression on a broken rule just hides the symptom.
 
 ## Principles I stuck to
 

@@ -78,6 +78,8 @@ A few parts of this project turned out more interesting than the setup work.
 
 **A dashboard KPI disagreed with what I knew.** The unique signature count read 3 when I had only ever seen 2. That could have been a broken panel or a real change, and both needed ruling out. It was real, and the investigation is in [docs/investigations.md](docs/investigations.md).
 
+**A correlation search caught a false positive in one of its own inputs.** While validating [COR-001](detections/COR-001-recon-to-exploit-chain.md), a test that should have stayed quiet fired, because my command injection rule was matching Splunk's own `&id=` search URLs as a backgrounded `id` command. The rule was wrong, not the traffic, so I fixed the pattern instead of suppressing it. Written up in [docs/investigations.md](docs/investigations.md) and [DET-002](detections/DET-002-command-injection.md).
+
 **An IDS alert proves attempt, not impact.** All four of my validation attacks returned the same harmless page, because the web root ignores the parameters I was injecting. Every rule fired anyway. That is correct behaviour, and understanding why matters more than it first appears. Covered in [docs/lessons-learned.md](docs/lessons-learned.md).
 
 ## Repository layout

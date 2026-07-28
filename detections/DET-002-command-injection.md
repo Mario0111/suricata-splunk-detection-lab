@@ -18,19 +18,21 @@ On the wire the pattern is a shell metacharacter followed by a recognisable Unix
 The regex looks for a shell separator followed by a command:
 
 ```
-/[\x3b|&`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i
+/[\x3b|`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i
 ```
 
-The character class covers the metacharacters used to chain a second command: semicolon for sequential execution, pipe, ampersand for backgrounding, and backtick for substitution. The semicolon is written as `\x3b` rather than literally, for reasons covered below. `\s*` allows for whitespace between the separator and the command.
+The character class covers the metacharacters used to chain a second command in a URL: semicolon for sequential execution, pipe, and backtick for substitution. The semicolon is written as `\x3b` rather than literally, for reasons covered below. `\s*` allows for whitespace between the separator and the command.
+
+The class started out with ampersand in it too, for backgrounding. I removed it after it produced false positives, covered in the tuning section. The short version is that `&` separates query parameters in a URL, so it is a poor injection character and a rich source of noise.
 
 The command list is curated rather than exhaustive. These are the ones that show up in real payloads: `id`, `whoami` and `uname` for working out where you landed, `cat` for reading files, and `wget`, `curl` and `nc` for pulling down a payload or calling home. The `\b` word boundary stops `lsof` matching `ls` or `idea` matching `id`.
 
-This favours precision over recall. An attacker using an uncommon binary gets past it, but the common cases fire cleanly and I have seen no false positives. Like DET-001 it only covers GET style injection in the URI, not POST bodies, which would be a separate rule.
+This favours precision over recall. An attacker using an uncommon binary gets past it, but the common cases fire cleanly. The first version did produce false positives, traced and fixed in the tuning section below. Like DET-001 it only covers GET style injection in the URI, not POST bodies, which would be a separate rule.
 
 ## The rule
 
 ```
-alert http any any -> $HOME_NET any (msg:"LOCAL WEB Command Injection - Shell Metacharacter with Command in URI"; flow:to_server,established; http.uri; pcre:"/[\x3b|&`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i"; classtype:web-application-attack; sid:1000003; rev:1;)
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Command Injection - Shell Metacharacter with Command in URI"; flow:to_server,established; http.uri; pcre:"/[\x3b|`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i"; classtype:web-application-attack; sid:1000003; rev:2;)
 ```
 
 ## Why the first version failed to load
@@ -78,8 +80,29 @@ Command injection is blind from the request alone, so establishing whether it wo
 
 Pivoting on `src_ip` for other web attack signatures in the same window is usually productive. Command injection rarely arrives on its own.
 
-## Tuning
+## Tuning: removing a false positive
 
-None applied. Precision is high by design, given the metacharacter plus word bounded command requirement.
+The first version of this rule (rev:1) had `&` in the character class, for shell backgrounding. It generated false positives, and the way I found them is worth recording.
 
-If a legitimate application ever passes these tokens in a URL, the fix would be an exception scoped to that specific hostname or path rather than weakening the pattern for everything.
+I did not notice them while looking at this detection on its own. They surfaced when I was validating the correlation search [COR-001](COR-001-recon-to-exploit-chain.md), which counts distinct attack stages per source IP. A negative test that should have stayed quiet fired instead, and the reason was eight command injection alerts I had not sent. Tracing them:
+
+```spl
+index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id=1000003 dest_ip=10.10.10.40 earliest=-2h
+| table _time src_ip dest_ip http.url http.http_user_agent
+```
+
+Every one was my own browser hitting the Splunk server, with a Firefox user agent, on this kind of URL:
+
+```
+/en-US/splunkd/__raw/services/search/jobs?output_mode=json&id=root__root__search__RMD5...
+```
+
+The rule read `&id=` as "background operator, then the `id` command", exactly like a real `& id` injection. Every Splunk search I ran called `...&id=<jobid>` and tripped the rule. The tool I was validating with was generating false positives against the rule I was validating.
+
+**Root cause.** `&` means two different things. To a shell it backgrounds a process, in a URL it separates query parameters. A GET request that contains `& id` gets split on the `&` by the web server before anything reaches a shell, so `&` is a weak injection vector in a URI and a strong false positive generator. Real command injection through a URL uses `;`, `|` or backticks, which the rule still covers.
+
+**Fix.** Drop `&` from the character class, bump to rev:2. Re-validated in both directions: the `;id` attack still fires, and running searches in Splunk no longer produces command injection alerts on `10.10.10.40`.
+
+**Why not a suppression instead.** I could have suppressed the signature for traffic to the Splunk server, the way I proposed for [SID 2221036](../docs/tuning.md). I did not, because this was not benign traffic tripping a correct rule, it was a genuinely wrong rule. The `&id=` match is a false positive everywhere, not just against my Splunk server, so the right fix is correcting the pattern, not hiding its output for one host. Suppression is for benign traffic on a good rule. This was a bad rule.
+
+This is written up as an investigation in [investigations.md](../docs/investigations.md#a-false-positive-the-correlation-search-forced-into-view).

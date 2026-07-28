@@ -19,8 +19,12 @@ alert http any any -> $HOME_NET any (msg:"LOCAL WEB SQL Injection Attempt - UNIO
 # The semicolon is written \x3b rather than literally. Suricata tokenises rule
 # options on ';' before PCRE compiles the pattern, so a literal semicolon inside
 # the character class truncates the pcre option and the whole ruleset fails to
-# load. See detections/DET-002-command-injection.md
-alert http any any -> $HOME_NET any (msg:"LOCAL WEB Command Injection - Shell Metacharacter with Command in URI"; flow:to_server,established; http.uri; pcre:"/[\x3b|&`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i"; classtype:web-application-attack; sid:1000003; rev:1;)
+# load.
+# rev:2 dropped '&' from the character class. In a URL '&' separates query
+# parameters, so '&id=' (as in Splunk's own /search/jobs?...&id=<jobid> calls)
+# matched as "& id" and produced false positives on legitimate Splunk traffic.
+# See detections/DET-002-command-injection.md
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Command Injection - Shell Metacharacter with Command in URI"; flow:to_server,established; http.uri; pcre:"/[\x3b|`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i"; classtype:web-application-attack; sid:1000003; rev:2;)
 
 # 1000004: directory traversal and LFI, sensitive file access via URI. T1083.
 alert http any any -> $HOME_NET any (msg:"LOCAL WEB Directory Traversal - Sensitive File Access via URI"; flow:to_server,established; http.uri; pcre:"/(?:\.\.[\/\\]|%2e%2e[\/\\%]|etc\/passwd|boot\.ini)/i"; classtype:web-application-attack; sid:1000004; rev:1;)
