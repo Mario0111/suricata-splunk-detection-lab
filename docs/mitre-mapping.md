@@ -27,7 +27,7 @@ T1595.002 Recon  ->  T1190 Initial Access  ->  T1059 Execution  ->  T1083 Discov
                                                  \-> T1505.003 Persistence (web shell)
 ```
 
-A single source scanning and then exploiting will hit DET-004 followed by one or more of the exploitation and post exploitation rules. That sequence is what [COR-001](../detections/COR-001-recon-to-exploit-chain.md) watches for, and it is the reason the correlation search scores stage progression rather than alert count. COR-001 currently correlates the first four exploitation stages; extending it to fold in the reverse shell and web shell stages would let it reconstruct the full chain through to persistence.
+A single source scanning and then exploiting will hit DET-004 followed by one or more of the exploitation and post exploitation rules. That sequence is what [COR-001](../detections/COR-001-recon-to-exploit-chain.md) watches for, and it is the reason the correlation search scores stage progression rather than alert count. COR-001 correlates all seven stages: a source crossing two or more is raised as a notable, ranked by risk and escalated to Critical the moment it reaches command and control or persistence. A partial chain still surfaces as High, so the search covers the short recon to exploit path and the full path to a dropped backdoor in one place.
 
 ## Summary
 
