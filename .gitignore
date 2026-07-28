@@ -1,0 +1,18 @@
+# Never commit secrets or license material
+*.pem
+*.key
+splunk.license
+*credentials*
+*secret*
+passwd
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+COMPLETION-PLAN.md
+Detection_Engineering_Portfolio_Project_Context.md
+FILL-IN-CHECKLIST.md
+

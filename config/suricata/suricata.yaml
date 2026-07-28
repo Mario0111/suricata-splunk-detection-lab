@@ -1,0 +1,27 @@
+# Relevant excerpts from /etc/suricata/suricata.yaml on suricata-01 (10.10.10.30).
+# Trimmed to the sections that define this deployment. Comments from the
+# shipped default are removed for readability.
+
+vars:
+  address-groups:
+    HOME_NET: "[10.10.10.0/24]"
+    EXTERNAL_NET: "!$HOME_NET"
+
+# Packet capture. AF_PACKET on the monitoring interface, flow load balancing.
+af-packet:
+  - interface: enp0s3
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+
+# EVE JSON output. This is the file the Universal Forwarder tails.
+# The alert and http event types are the ones this project builds on; the
+# full deployment logs the Suricata default set.
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert
+        - http

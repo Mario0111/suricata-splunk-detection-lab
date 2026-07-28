@@ -1,0 +1,31 @@
+# Custom Suricata rules. Local SID space starts at 1000001.
+# Deployed to /var/lib/suricata/rules/local.rules
+# Vendor rules stay in suricata.rules so ruleset updates cannot overwrite these.
+# Every change validated with `suricata -T` before restarting the service.
+#
+# All lab hosts sit inside 10.10.10.0/24, so both attacker and victim fall
+# within HOME_NET. The web rules use `any any -> $HOME_NET any` because the
+# conventional `$EXTERNAL_NET -> $HOME_NET` form would never match in a flat
+# subnet, and `any` also keeps them valid for lateral attacks.
+
+# 1000001: pipeline test. Proves attack -> Suricata -> eve.json -> forwarder ->
+# Splunk works end to end. Not a threat detection.
+alert icmp 10.10.10.10 any -> 10.10.10.20 any (msg:"LAB Suricata ICMP Detection Pipeline Test"; itype:8; sid:1000001; rev:1;)
+
+# 1000002: SQL injection, UNION SELECT in URI. T1190.
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB SQL Injection Attempt - UNION SELECT in URI"; flow:to_server,established; http.uri; pcre:"/union(?:\s|%20|\+)+(?:all(?:\s|%20|\+)+)?select/i"; classtype:web-application-attack; sid:1000002; rev:1;)
+
+# 1000003: command injection, shell metacharacter with command in URI. T1059.
+# The semicolon is written \x3b rather than literally. Suricata tokenises rule
+# options on ';' before PCRE compiles the pattern, so a literal semicolon inside
+# the character class truncates the pcre option and the whole ruleset fails to
+# load. See detections/DET-002-command-injection.md
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Command Injection - Shell Metacharacter with Command in URI"; flow:to_server,established; http.uri; pcre:"/[\x3b|&`]\s*(?:cat|id|whoami|uname|ls|pwd|nc|wget|curl|bash|sh|ping)\b/i"; classtype:web-application-attack; sid:1000003; rev:1;)
+
+# 1000004: directory traversal and LFI, sensitive file access via URI. T1083.
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Directory Traversal - Sensitive File Access via URI"; flow:to_server,established; http.uri; pcre:"/(?:\.\.[\/\\]|%2e%2e[\/\\%]|etc\/passwd|boot\.ini)/i"; classtype:web-application-attack; sid:1000004; rev:1;)
+
+# 1000005: suspicious user agent, known attack tooling. T1595.002.
+# curl and python-requests are excluded on purpose, since both appear in
+# legitimate automation and in my own attack simulations.
+alert http any any -> $HOME_NET any (msg:"LOCAL WEB Suspicious User-Agent - Known Attack Tool"; flow:to_server,established; http.user_agent; pcre:"/(?:sqlmap|nikto|nmap|masscan|metasploit|dirbuster|gobuster|wpscan|hydra|nuclei|zgrab)/i"; classtype:web-application-attack; sid:1000005; rev:1;)
