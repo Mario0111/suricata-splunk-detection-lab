@@ -99,6 +99,10 @@ Every one was my own browser hitting the Splunk server, with a Firefox user agen
 
 The rule read `&id=` as "background operator, then the `id` command", exactly like a real `& id` injection. Every Splunk search I ran called `...&id=<jobid>` and tripped the rule. The tool I was validating with was generating false positives against the rule I was validating.
 
+![Command injection false positives on Splunk traffic alongside the real attack](../screenshots/det-002-fp-splunk.png)
+
+The two are easy to tell apart once you see them together. The false positives go to `10.10.10.40`, the Splunk server, on `/services/search/jobs?...&id=` URLs. The real attacks go to `10.10.10.20`, the victim, on `/?cmd=127.0.0.1;id`. Same signature, completely different traffic.
+
 **Root cause.** `&` means two different things. To a shell it backgrounds a process, in a URL it separates query parameters. A GET request that contains `& id` gets split on the `&` by the web server before anything reaches a shell, so `&` is a weak injection vector in a URI and a strong false positive generator. Real command injection through a URL uses `;`, `|` or backticks, which the rule still covers.
 
 **Fix.** Drop `&` from the character class, bump to rev:2. Re-validated in both directions: the `;id` attack still fires, and running searches in Splunk no longer produces command injection alerts on `10.10.10.40`.
