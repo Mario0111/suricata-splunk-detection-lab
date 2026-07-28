@@ -1,0 +1,337 @@
+{
+  "visualizations": {
+    "viz_sOm39mjb": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_zRDbqTZW"
+      },
+      "title": "Total Alerts",
+      "options": {
+        "majorFontSize": 40
+      }
+    },
+    "viz_7ooWffE6": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_yCurS10y"
+      },
+      "title": "Unique Source Assets",
+      "options": {
+        "majorFontSize": 40
+      }
+    },
+    "viz_IFzIZDBQ": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_ICSDsMZ1"
+      },
+      "title": "Unique Destination Assets",
+      "options": {
+        "majorFontSize": 40
+      }
+    },
+    "viz_TlozdiJ0": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_6UK5u2od"
+      },
+      "title": "Unique Detections",
+      "options": {
+        "majorFontSize": 40
+      }
+    },
+    "viz_AkcB8Tlg": {
+      "type": "splunk.line",
+      "dataSources": {
+        "primary": "ds_6znhnGPk"
+      },
+      "title": "Alert Timeline",
+      "description": "Displays alert volume over time to identify spikes, recurring detections, and sustained periods of activity during the selected investigation window."
+    },
+    "viz_JQHts0Sx": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_i8G1aLVE"
+      },
+      "title": "Detection Breakdown",
+      "options": {
+        "overlayFields": [],
+        "y": "> primary | frameBySeriesNames('_tc','count')"
+      },
+      "description": "Highlights the alert signatures contributing most to the current investigation."
+    },
+    "viz_aOcqcob0": {
+      "type": "splunk.pie",
+      "dataSources": {
+        "primary": "ds_8m732Kjo"
+      },
+      "title": "Protocol Distribution",
+      "description": "Breaks down alert activity by network protocol, providing quick context about the types of communications involved."
+    },
+    "viz_0JsdSBLx": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_b0jCEvNq"
+      },
+      "title": "Top Source IPs",
+      "description": "Displays the source IP addresses responsible for the highest number of alerts within the selected time range.",
+      "options": {
+        "y": "> primary | frameBySeriesNames('count','_tc')"
+      }
+    },
+    "viz_jagJthUy": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_SOFG9LRn"
+      },
+      "title": "Top Destination IPs",
+      "description": "Displays the destination IP addresses most frequently involved in detected activity.",
+      "options": {
+        "y": "> primary | frameBySeriesNames('count','_tc')"
+      }
+    },
+    "viz_RHpzXmxh": {
+      "type": "splunk.table",
+      "dataSources": {
+        "primary": "ds_kujPRWV0"
+      },
+      "title": "Recent Alerts",
+      "description": "Lists the most recent alerts with key investigation fields, allowing analysts to quickly identify affected systems, triggered detections, and HTTP context for further analysis."
+    }
+  },
+  "dataSources": {
+    "ds_zRDbqTZW": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count AS \"Total Alerts\""
+      },
+      "name": "Total Alerts"
+    },
+    "ds_yCurS10y": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats dc(src_ip) AS \"Unique Source IPs\""
+      },
+      "name": "Unique Source Assets"
+    },
+    "ds_ICSDsMZ1": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats dc(dest_ip) AS \"Unique Destination IPs\""
+      },
+      "name": "Unique Destination Assets"
+    },
+    "ds_6UK5u2od": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats dc(alert.signature_id) AS \"Unique Signatures\""
+      },
+      "name": "Unique Detections"
+    },
+    "ds_6znhnGPk": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| timechart count AS \"Alert Count\""
+      },
+      "name": "Alert Timeline"
+    },
+    "ds_i8G1aLVE": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| top limit=10 alert.signature"
+      },
+      "name": "Detection Breakdown"
+    },
+    "ds_8m732Kjo": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| chart count BY proto"
+      },
+      "name": "Protocol Distribution"
+    },
+    "ds_b0jCEvNq": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| top limit=10 src_ip"
+      },
+      "name": "Top Source IPs"
+    },
+    "ds_SOFG9LRn": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| top limit=10 dest_ip"
+      },
+      "name": "Top Destination IPs"
+    },
+    "ds_kujPRWV0": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| table _time src_ip dest_ip proto alert.severity alert.signature http.hostname http.url\n| sort 0 - _time"
+      },
+      "name": "Recent Alerts"
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      },
+      "ds.spl2": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      }
+    },
+    "visualizations": {
+      "global": {
+        "showProgressBar": true
+      }
+    }
+  },
+  "inputs": {
+    "input_global_trp": {
+      "type": "input.timerange",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-24h@h,now"
+      },
+      "title": "Global Time Range"
+    }
+  },
+  "layout": {
+    "options": {},
+    "globalInputs": [
+      "input_global_trp"
+    ],
+    "tabs": {
+      "items": [
+        {
+          "layoutId": "layout_1",
+          "label": "New tab"
+        }
+      ]
+    },
+    "layoutDefinitions": {
+      "layout_1": {
+        "type": "absolute",
+        "structure": [
+          {
+            "item": "viz_sOm39mjb",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 370,
+              "h": 70
+            }
+          },
+          {
+            "item": "viz_7ooWffE6",
+            "type": "block",
+            "position": {
+              "x": 370,
+              "y": 0,
+              "w": 360,
+              "h": 70
+            }
+          },
+          {
+            "item": "viz_IFzIZDBQ",
+            "type": "block",
+            "position": {
+              "x": 730,
+              "y": 0,
+              "w": 360,
+              "h": 70
+            }
+          },
+          {
+            "item": "viz_TlozdiJ0",
+            "type": "block",
+            "position": {
+              "x": 1090,
+              "y": 0,
+              "w": 350,
+              "h": 70
+            }
+          },
+          {
+            "item": "viz_AkcB8Tlg",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 70,
+              "w": 1440,
+              "h": 240
+            }
+          },
+          {
+            "item": "viz_JQHts0Sx",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 310,
+              "w": 800,
+              "h": 170
+            }
+          },
+          {
+            "item": "viz_aOcqcob0",
+            "type": "block",
+            "position": {
+              "x": 800,
+              "y": 310,
+              "w": 640,
+              "h": 170
+            }
+          },
+          {
+            "item": "viz_0JsdSBLx",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 480,
+              "w": 730,
+              "h": 160
+            }
+          },
+          {
+            "item": "viz_jagJthUy",
+            "type": "block",
+            "position": {
+              "x": 730,
+              "y": 480,
+              "w": 710,
+              "h": 160
+            }
+          },
+          {
+            "item": "viz_RHpzXmxh",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 640,
+              "w": 1440,
+              "h": 320
+            }
+          }
+        ],
+        "options": {
+          "width": 1440,
+          "height": 960,
+          "display": "auto"
+        }
+      }
+    }
+  },
+  "description": "This dashboard should help an analyst rapidly answer the first questions during alert triage.",
+  "title": "SOC Analyst Triage Dashboard"
+}

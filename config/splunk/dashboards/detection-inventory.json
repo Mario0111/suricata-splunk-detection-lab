@@ -1,0 +1,247 @@
+{
+  "visualizations": {
+    "viz_PkdPdGYv": {
+      "type": "splunk.table",
+      "dataSources": {
+        "primary": "ds_wJKCrKu2"
+      },
+      "title": "Detection Catalog",
+      "description": "Lists all observed Suricata detection signatures with key metadata and activity metrics, providing a baseline for detection engineering and rule tuning."
+    },
+    "viz_dKge4qJH": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_ajlNHiS5"
+      },
+      "title": "Top Detection Volume",
+      "description": "Highlights the detection signatures generating the highest alert volume, helping identify noisy rules and prioritize tuning efforts.",
+      "options": {
+        "y": "> primary | frameBySeriesNames('count','_tc')"
+      }
+    },
+    "viz_gTVLlACS": {
+      "type": "splunk.pie",
+      "dataSources": {
+        "primary": "ds_E79LoTLk"
+      },
+      "title": "Detection Severity Distribution",
+      "description": "Shows the distribution of detections by severity."
+    },
+    "viz_furg24qR": {
+      "type": "splunk.line",
+      "dataSources": {
+        "primary": "ds_Oap1Rb7I"
+      },
+      "title": "Dtection Trends",
+      "description": "Visualizes detection activity over time."
+    },
+    "viz_GqdAo2Zx": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_QeX84U76"
+      },
+      "title": "Detection Categories",
+      "description": "Breaks down detections by Suricata alert category, helping engineers understand the types of activity being detected."
+    },
+    "viz_1qaK6rrH": {
+      "type": "splunk.table",
+      "dataSources": {
+        "primary": "ds_ityDXOWz"
+      },
+      "title": "High Volume Rules",
+      "description": "Identifies detection signatures exceeding a defined alert threshold, helping prioritize high-noise rules for investigation and tuning."
+    },
+    "viz_Z4w6VrVM": {
+      "type": "splunk.table",
+      "dataSources": {
+        "primary": "ds_MIrFXP66"
+      },
+      "title": "Recently Introduced Detections",
+      "description": "Lists recently observed detection signatures to help validate new rules, monitor emerging activity, and track changes in detection coverage."
+    }
+  },
+  "dataSources": {
+    "ds_wJKCrKu2": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count earliest(_time) as FirstSeen latest(_time) as LastSeen by alert.signature_id alert.signature alert.category alert.severity\n| convert ctime(FirstSeen) ctime(LastSeen)\n| sort -count"
+      },
+      "name": "Detection Catalog"
+    },
+    "ds_ajlNHiS5": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| top limit=10 alert.signature"
+      },
+      "name": "Top Detection Volume"
+    },
+    "ds_E79LoTLk": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| chart count BY alert.severity"
+      },
+      "name": "Detection Severity Distribution"
+    },
+    "ds_Oap1Rb7I": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| timechart count"
+      },
+      "name": "Detection Trends"
+    },
+    "ds_QeX84U76": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| top limit=10 alert.category"
+      },
+      "name": "Detection Categories"
+    },
+    "ds_ityDXOWz": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count by alert.signature\n| where count > 100\n| sort -count"
+      },
+      "name": "High Volume Rules"
+    },
+    "ds_MIrFXP66": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats earliest(_time) as FirstSeen latest(_time) as LastSeen count by alert.signature\n| convert ctime(FirstSeen) ctime(LastSeen)\n| sort -LastSeen"
+      },
+      "name": "Recently Introduced Detections"
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      },
+      "ds.spl2": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      }
+    },
+    "visualizations": {
+      "global": {
+        "showProgressBar": true
+      }
+    }
+  },
+  "inputs": {
+    "input_global_trp": {
+      "type": "input.timerange",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-24h@h,now"
+      },
+      "title": "Global Time Range"
+    }
+  },
+  "layout": {
+    "options": {},
+    "globalInputs": [
+      "input_global_trp"
+    ],
+    "tabs": {
+      "items": [
+        {
+          "layoutId": "layout_1",
+          "label": "New tab"
+        }
+      ]
+    },
+    "layoutDefinitions": {
+      "layout_1": {
+        "type": "absolute",
+        "structure": [
+          {
+            "item": "viz_PkdPdGYv",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "w": 1440,
+              "h": 240
+            }
+          },
+          {
+            "item": "viz_dKge4qJH",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 240,
+              "w": 1160,
+              "h": 170
+            }
+          },
+          {
+            "item": "viz_gTVLlACS",
+            "type": "block",
+            "position": {
+              "x": 1160,
+              "y": 240,
+              "w": 280,
+              "h": 170
+            }
+          },
+          {
+            "item": "viz_furg24qR",
+            "type": "block",
+            "position": {
+              "x": 690,
+              "y": 410,
+              "w": 750,
+              "h": 190
+            }
+          },
+          {
+            "item": "viz_GqdAo2Zx",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 410,
+              "w": 690,
+              "h": 190
+            }
+          },
+          {
+            "item": "viz_1qaK6rrH",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 600,
+              "w": 1440,
+              "h": 180
+            }
+          },
+          {
+            "item": "viz_Z4w6VrVM",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 780,
+              "w": 1440,
+              "h": 180
+            }
+          }
+        ],
+        "options": {
+          "width": 1440,
+          "height": 960,
+          "display": "auto"
+        }
+      }
+    }
+  },
+  "description": "Provides an inventory of observed Suricata detections, enabling detection engineers to review rule activity, identify noisy or high-value signatures, validate detection coverage, and prioritize tuning efforts based on real telemetry.",
+  "title": "Detection Inventory"
+}

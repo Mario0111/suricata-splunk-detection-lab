@@ -1,0 +1,348 @@
+{
+  "visualizations": {
+    "viz_n2SuBKVr": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_2KkRXTvd"
+      },
+      "containerOptions": {
+        "visibility": {}
+      },
+      "showProgressBar": true,
+      "showLastUpdated": false,
+      "title": "Total Alerts",
+      "options": {
+        "majorFontSize": 50
+      }
+    },
+    "viz_HqQ4YzSM": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_BPyNtL6Q"
+      },
+      "containerOptions": {},
+      "showProgressBar": true,
+      "showLastUpdated": false,
+      "title": "Unique Signatures",
+      "options": {
+        "majorFontSize": 50,
+        "trendFontSize": 40
+      }
+    },
+    "viz_BpBF5yTl": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_0zZgPiv7"
+      },
+      "title": "Source IPs",
+      "options": {
+        "majorFontSize": 50
+      }
+    },
+    "viz_WUGc4lvX": {
+      "type": "splunk.singlevalue",
+      "dataSources": {
+        "primary": "ds_uEI688Hp"
+      },
+      "title": "Highest Severity",
+      "options": {
+        "majorFontSize": 50
+      }
+    },
+    "viz_nH6AiNmO": {
+      "type": "splunk.area",
+      "dataSources": {
+        "primary": "ds_OVfkxTu4"
+      },
+      "title": "Alerts over time",
+      "description": "Displays IDS alert volume over time, helping analysts identify activity spikes, detection trends, and potential data ingestion issues."
+    },
+    "viz_dOa4Bfjo": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_UAyWerd5"
+      },
+      "title": "Top Alert Signatures",
+      "options": {
+        "overlayFields": [],
+        "y": "> primary | frameBySeriesNames('_tc','count')"
+      },
+      "description": "Highlights the most frequently triggered detection signatures, enabling rapid identification of dominant alerts and candidates for tuning."
+    },
+    "viz_Iq1G6IW4": {
+      "type": "splunk.pie",
+      "dataSources": {
+        "primary": "ds_LxDNWvTf"
+      },
+      "title": "Severity Distribution",
+      "description": "Distribution of Suricata alerts by assigned severity within the selected time range.",
+      "options": {
+        "seriesColors": [
+          "#dc4e41",
+          "#f1813f",
+          "#f8be44",
+          "#53a051"
+        ]
+      }
+    },
+    "viz_Sp7I90Z5": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_zfvLNXtb"
+      },
+      "title": "Top Source IPs",
+      "description": "Source IP addresses associated with the highest alert volumes in the selected time range."
+    },
+    "viz_FZyoXAlj": {
+      "type": "splunk.bar",
+      "dataSources": {
+        "primary": "ds_Qa8QoIFI"
+      },
+      "title": "Top Destination IPs",
+      "description": "Destination IP addresses receiving the highest volume of detected network activity."
+    },
+    "viz_ETuNL2Ij": {
+      "type": "splunk.table",
+      "dataSources": {
+        "primary": "ds_RRAMrxAy"
+      },
+      "title": "Recent Alerts",
+      "description": "Displays the most recent Suricata alerts with key event details, providing analysts with immediate context for investigation."
+    }
+  },
+  "dataSources": {
+    "ds_2KkRXTvd": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count AS \"Total Alerts\""
+      },
+      "name": "Total Alerts"
+    },
+    "ds_BPyNtL6Q": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats dc(alert.signature) AS \"Unique Signatures\""
+      },
+      "name": "Unique Signatures"
+    },
+    "ds_0zZgPiv7": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats dc(src_ip) AS \"Source Hosts\""
+      },
+      "name": "Source Hosts"
+    },
+    "ds_uEI688Hp": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats min(alert.severity) AS \"Highest Severity\""
+      },
+      "name": "Highest Severity"
+    },
+    "ds_OVfkxTu4": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| timechart span=5m count AS Alerts"
+      },
+      "name": "Alerts over Time"
+    },
+    "ds_UAyWerd5": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count by alert.signature\n| sort -count\n| head 10"
+      },
+      "name": "Top Alert Signatures"
+    },
+    "ds_LxDNWvTf": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count AS Alerts by alert.severity\n| sort alert.severity"
+      },
+      "name": "Severity Distribution"
+    },
+    "ds_zfvLNXtb": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count AS Alerts by src_ip\n| sort -Alerts\n| head 10"
+      },
+      "name": "Top Source IPs"
+    },
+    "ds_Qa8QoIFI": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| stats count AS Alerts by dest_ip\n| sort -Alerts\n| head 10"
+      },
+      "name": "Top Destination IPs"
+    },
+    "ds_RRAMrxAy": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert\n| table _time alert.signature alert.severity src_ip dest_ip proto\n| sort -_time\n| head 20"
+      },
+      "name": "Recent Alerts"
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      },
+      "ds.spl2": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      }
+    },
+    "visualizations": {
+      "global": {
+        "showProgressBar": true
+      }
+    }
+  },
+  "inputs": {
+    "input_global_trp": {
+      "type": "input.timerange",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-24h@h,now"
+      },
+      "title": "Time Range"
+    }
+  },
+  "layout": {
+    "options": {},
+    "globalInputs": [
+      "input_global_trp"
+    ],
+    "tabs": {
+      "items": [
+        {
+          "layoutId": "layout_1",
+          "label": "New tab"
+        }
+      ]
+    },
+    "layoutDefinitions": {
+      "layout_1": {
+        "type": "absolute",
+        "structure": [
+          {
+            "item": "viz_n2SuBKVr",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": -10,
+              "w": 410,
+              "h": 90
+            }
+          },
+          {
+            "item": "viz_HqQ4YzSM",
+            "type": "block",
+            "position": {
+              "x": 410,
+              "y": 0,
+              "w": 360,
+              "h": 80
+            }
+          },
+          {
+            "item": "viz_BpBF5yTl",
+            "type": "block",
+            "position": {
+              "x": 770,
+              "y": -10,
+              "w": 350,
+              "h": 90
+            }
+          },
+          {
+            "item": "viz_WUGc4lvX",
+            "type": "block",
+            "position": {
+              "x": 1120,
+              "y": 0,
+              "w": 320,
+              "h": 80
+            }
+          },
+          {
+            "item": "viz_nH6AiNmO",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 80,
+              "w": 1440,
+              "h": 230
+            }
+          },
+          {
+            "item": "viz_dOa4Bfjo",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 310,
+              "w": 990,
+              "h": 230
+            }
+          },
+          {
+            "item": "viz_Iq1G6IW4",
+            "type": "block",
+            "position": {
+              "x": 990,
+              "y": 310,
+              "w": 450,
+              "h": 230
+            }
+          },
+          {
+            "item": "viz_Sp7I90Z5",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 540,
+              "w": 730,
+              "h": 170
+            }
+          },
+          {
+            "item": "viz_FZyoXAlj",
+            "type": "block",
+            "position": {
+              "x": 730,
+              "y": 540,
+              "w": 710,
+              "h": 170
+            }
+          },
+          {
+            "item": "viz_ETuNL2Ij",
+            "type": "block",
+            "position": {
+              "x": 0,
+              "y": 710,
+              "w": 1440,
+              "h": 250
+            }
+          }
+        ],
+        "options": {
+          "width": 1440,
+          "height": 960,
+          "display": "auto"
+        }
+      }
+    }
+  },
+  "description": "Provides a real time operational view of the Suricata to Splunk detection pipeline, highlighting alert volume, data health, signature activity, and overall sensor status.",
+  "title": "Detection Health Overview"
+}
