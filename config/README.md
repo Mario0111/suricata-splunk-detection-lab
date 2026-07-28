@@ -8,6 +8,7 @@ config/
   splunk-uf/inputs.conf     the eve.json monitor stanza on the forwarder
   splunk-uf/outputs.conf    forwarding to the indexer on 10.10.10.40:9997
   splunk/indexes.conf       suricata index definition on the indexer
+  splunk/savedsearches.conf the COR-001 scheduled correlation search
 ```
 
 A couple of details worth pointing out.

@@ -44,7 +44,7 @@ Individual detections fire in isolation. Correlation is what turns them into an 
 
 | ID | Correlation | Inputs | Status |
 |---|---|---|---|
-| [COR-001](../detections/COR-001-recon-to-exploit-chain.md) | Risk scored notable when one source IP progresses across two or more attack stages | SIDs 1000002 to 1000005 | Validated ad hoc, pending scheduled deployment |
+| [COR-001](../detections/COR-001-recon-to-exploit-chain.md) | Risk scored notable when one source IP progresses across two or more attack stages | SIDs 1000002 to 1000005 | Deployed as a scheduled search |
 
 ## How I work through a detection
 
