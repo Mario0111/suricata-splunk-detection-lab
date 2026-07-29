@@ -21,6 +21,7 @@ flowchart LR
     SP --> D1["Detection Health<br/>Overview"]
     SP --> D2["SOC Analyst<br/>Triage"]
     SP --> D3["Detection<br/>Inventory"]
+    SP --> D4["Risk Based<br/>Kill Chain"]
 ```
 
 | Component | Details |
@@ -91,14 +92,14 @@ A few parts of this project turned out more interesting than the setup work.
 ```
 docs/
   architecture.md      lab topology, sensor spec, pipeline design
-  dashboards.md        all three dashboards with their SPL
+  dashboards.md        all four dashboards with their SPL
   detections.md        signature inventory and detection index
   investigations.md    the two investigations
   tuning.md            noise analysis and tuning decisions
   mitre-mapping.md     ATT&CK coverage
   lessons-learned.md
 detections/
-  DET-001 to DET-004   per detection writeups
+  DET-001 to DET-007   per detection writeups
   COR-001              correlation search
   rules/local.rules    the custom rules
 journal/               engineering journal, OBS-001 to OBS-006
