@@ -1,0 +1,171 @@
+{
+  "visualizations": {
+    "viz_active": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_active" },
+      "title": "Active Attack Chains",
+      "description": "Source IPs currently across two or more attack stages.",
+      "options": { "majorFontSize": 40 }
+    },
+    "viz_critical": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_critical" },
+      "title": "Critical Chains",
+      "description": "Chains that reached command and control or persistence, or scored 120 or higher.",
+      "options": { "majorFontSize": 40, "majorColor": "#dc4e41" }
+    },
+    "viz_highest": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_highest" },
+      "title": "Highest Risk Score",
+      "options": { "majorFontSize": 40 }
+    },
+    "viz_persist": {
+      "type": "splunk.singlevalue",
+      "dataSources": { "primary": "ds_persist" },
+      "title": "Reached Persistence",
+      "description": "Sources that got a web shell stage, a dropped backdoor.",
+      "options": { "majorFontSize": 40, "majorColor": "#dc4e41" }
+    },
+    "viz_topsrc": {
+      "type": "splunk.bar",
+      "dataSources": { "primary": "ds_topsrc" },
+      "title": "Top Risk Sources",
+      "description": "Source IPs ranked by summed risk score. Who is most dangerous right now."
+    },
+    "viz_overtime": {
+      "type": "splunk.area",
+      "dataSources": { "primary": "ds_overtime" },
+      "title": "Risk Over Time",
+      "description": "Risk accrued per 10 minute window. Escalation is visible as it happens."
+    },
+    "viz_progression": {
+      "type": "splunk.table",
+      "dataSources": { "primary": "ds_progression" },
+      "title": "Attack Stage Progression",
+      "description": "Which stages each active source has crossed, in attack order."
+    },
+    "viz_notables": {
+      "type": "splunk.table",
+      "dataSources": { "primary": "ds_notables" },
+      "title": "Kill Chain Notables",
+      "description": "The COR-001 correlation output. One row per source, ranked by risk, severity escalated on command and control or persistence."
+    }
+  },
+  "dataSources": {
+    "ds_active": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| stats dc(stage) AS stages BY src_ip\n| where stages>=2\n| stats count AS \"Active Chains\""
+      },
+      "name": "Active Attack Chains"
+    },
+    "ds_critical": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| eval risk=case('alert.signature_id'==1000005,20,'alert.signature_id'==1000008,30,'alert.signature_id'==1000002,40,'alert.signature_id'==1000004,30,'alert.signature_id'==1000003,50,'alert.signature_id'==1000006,60,'alert.signature_id'==1000007,70)\n| stats sum(risk) AS risk_score dc(stage) AS stages values(stage) AS attack_stages BY src_ip\n| where stages>=2\n| eval severity=case(match(mvjoin(attack_stages,\",\"),\"Persistence|Command and Control\") OR risk_score>=120,\"Critical\", risk_score>=70,\"High\", true(),\"Medium\")\n| where severity==\"Critical\"\n| stats count AS \"Critical Chains\""
+      },
+      "name": "Critical Chains"
+    },
+    "ds_highest": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| eval risk=case('alert.signature_id'==1000005,20,'alert.signature_id'==1000008,30,'alert.signature_id'==1000002,40,'alert.signature_id'==1000004,30,'alert.signature_id'==1000003,50,'alert.signature_id'==1000006,60,'alert.signature_id'==1000007,70)\n| stats sum(risk) AS risk_score dc(stage) AS stages BY src_ip\n| where stages>=2\n| stats max(risk_score) AS \"Highest Risk Score\""
+      },
+      "name": "Highest Risk Score"
+    },
+    "ds_persist": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| stats dc(stage) AS stages values(stage) AS attack_stages BY src_ip\n| where stages>=2 AND match(mvjoin(attack_stages,\",\"),\"Persistence\")\n| stats count AS \"Reached Persistence\""
+      },
+      "name": "Reached Persistence"
+    },
+    "ds_topsrc": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| eval risk=case('alert.signature_id'==1000005,20,'alert.signature_id'==1000008,30,'alert.signature_id'==1000002,40,'alert.signature_id'==1000004,30,'alert.signature_id'==1000003,50,'alert.signature_id'==1000006,60,'alert.signature_id'==1000007,70)\n| stats sum(risk) AS risk_score dc(stage) AS stages BY src_ip\n| where stages>=2\n| sort -risk_score\n| head 10\n| table src_ip risk_score"
+      },
+      "name": "Top Risk Sources"
+    },
+    "ds_overtime": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval risk=case('alert.signature_id'==1000005,20,'alert.signature_id'==1000008,30,'alert.signature_id'==1000002,40,'alert.signature_id'==1000004,30,'alert.signature_id'==1000003,50,'alert.signature_id'==1000006,60,'alert.signature_id'==1000007,70)\n| timechart span=10m sum(risk) AS \"Risk Score\""
+      },
+      "name": "Risk Over Time"
+    },
+    "ds_progression": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| eval risk=case('alert.signature_id'==1000005,20,'alert.signature_id'==1000008,30,'alert.signature_id'==1000002,40,'alert.signature_id'==1000004,30,'alert.signature_id'==1000003,50,'alert.signature_id'==1000006,60,'alert.signature_id'==1000007,70)\n| stats dc(stage) AS stages_observed values(stage) AS attack_stages sum(risk) AS risk_score BY src_ip\n| where stages_observed>=2\n| sort -risk_score\n| table src_ip stages_observed attack_stages risk_score"
+      },
+      "name": "Attack Stage Progression"
+    },
+    "ds_notables": {
+      "type": "ds.search",
+      "options": {
+        "query": "index=suricata sourcetype=suricata:eve event_type=alert alert.signature_id>=1000002 alert.signature_id<=1000008\n| eval stage=case('alert.signature_id'==1000005,\"1-Reconnaissance\",'alert.signature_id'==1000008,\"2-Credential Access\",'alert.signature_id'==1000002,\"3-Initial Access\",'alert.signature_id'==1000003,\"4-Execution\",'alert.signature_id'==1000006,\"5-Command and Control\",'alert.signature_id'==1000004,\"6-Discovery\",'alert.signature_id'==1000007,\"7-Persistence\")\n| eval risk=case('alert.signature_id'==1000005,20,'alert.signature_id'==1000008,30,'alert.signature_id'==1000002,40,'alert.signature_id'==1000004,30,'alert.signature_id'==1000003,50,'alert.signature_id'==1000006,60,'alert.signature_id'==1000007,70)\n| stats sum(risk) AS risk_score dc(stage) AS stages_observed values(stage) AS attack_stages values(alert.signature) AS detections values(dest_ip) AS targets min(_time) AS first_activity max(_time) AS last_activity BY src_ip\n| where stages_observed>=2\n| eval severity=case(match(mvjoin(attack_stages,\",\"),\"Persistence|Command and Control\") OR risk_score>=120,\"Critical\", risk_score>=70,\"High\", true(),\"Medium\")\n| convert ctime(first_activity) ctime(last_activity)\n| sort -risk_score\n| table src_ip severity risk_score stages_observed attack_stages detections targets first_activity last_activity"
+      },
+      "name": "Kill Chain Notables"
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "latest": "$global_time.latest$",
+            "earliest": "$global_time.earliest$"
+          }
+        }
+      }
+    },
+    "visualizations": {
+      "global": {
+        "showProgressBar": true
+      }
+    }
+  },
+  "inputs": {
+    "input_global_trp": {
+      "type": "input.timerange",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "-24h@h,now"
+      },
+      "title": "Global Time Range"
+    }
+  },
+  "layout": {
+    "options": {},
+    "globalInputs": ["input_global_trp"],
+    "tabs": {
+      "items": [
+        { "layoutId": "layout_1", "label": "New tab" }
+      ]
+    },
+    "layoutDefinitions": {
+      "layout_1": {
+        "type": "absolute",
+        "structure": [
+          { "item": "viz_active", "type": "block", "position": { "x": 0, "y": 0, "w": 360, "h": 90 } },
+          { "item": "viz_critical", "type": "block", "position": { "x": 360, "y": 0, "w": 360, "h": 90 } },
+          { "item": "viz_persist", "type": "block", "position": { "x": 720, "y": 0, "w": 360, "h": 90 } },
+          { "item": "viz_highest", "type": "block", "position": { "x": 1080, "y": 0, "w": 360, "h": 90 } },
+          { "item": "viz_topsrc", "type": "block", "position": { "x": 0, "y": 90, "w": 720, "h": 230 } },
+          { "item": "viz_overtime", "type": "block", "position": { "x": 720, "y": 90, "w": 720, "h": 230 } },
+          { "item": "viz_progression", "type": "block", "position": { "x": 0, "y": 320, "w": 1440, "h": 200 } },
+          { "item": "viz_notables", "type": "block", "position": { "x": 0, "y": 520, "w": 1440, "h": 300 } }
+        ],
+        "options": {
+          "width": 1440,
+          "height": 820,
+          "display": "auto"
+        }
+      }
+    }
+  },
+  "description": "Risk based view of the custom detection set. Surfaces the COR-001 correlation, ranking source IPs by summed attack-stage risk and highlighting chains that reached command and control or persistence.",
+  "title": "Risk Based Kill Chain"
+}

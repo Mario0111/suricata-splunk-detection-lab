@@ -2,7 +2,7 @@
 
 I built this lab to practise the work a detection engineer actually does. Not just installing an IDS, but getting its telemetry into a SIEM, writing rules that fire on real attack traffic, proving they work, and deciding what to do about the noise that shows up along the way.
 
-Suricata 8 runs on an isolated VirtualBox network and ships EVE JSON to Splunk Enterprise through a Universal Forwarder. On top of that sit three dashboards, seven custom detections covering seven ATT&CK tactics, and a correlation search that ties them together.
+Suricata 8 runs on an isolated VirtualBox network and ships EVE JSON to Splunk Enterprise through a Universal Forwarder. On top of that sit four dashboards, seven custom detections covering seven ATT&CK tactics, and a correlation search that ties them together.
 
 One rule I kept to throughout: investigate before tuning. Twice something unexpected showed up in the data, and both times I stopped building and worked out why before changing anything.
 
@@ -43,7 +43,7 @@ More detail in [docs/architecture.md](docs/architecture.md).
 
 **A correlation search** that scores attacker progression across stages instead of counting alerts, so it stays quiet during the noisy periods that dominate this environment. See [COR-001](detections/COR-001-recon-to-exploit-chain.md).
 
-**Three dashboards**, each aimed at one audience and one question rather than one dashboard trying to serve everyone. Covered in [docs/dashboards.md](docs/dashboards.md).
+**Four dashboards**, each aimed at one audience and one question rather than one dashboard trying to serve everyone: pipeline health, analyst triage, detection inventory, and a risk based kill chain view that sits on top of the correlation search. Covered in [docs/dashboards.md](docs/dashboards.md).
 
 **Two investigations** where the environment did something I did not expect, written up in [docs/investigations.md](docs/investigations.md).
 
@@ -54,6 +54,7 @@ More detail in [docs/architecture.md](docs/architecture.md).
 | [Detection Health Overview](docs/dashboards.md#detection-health-overview) | Detection engineering | Is the pipeline alive and behaving normally? |
 | [SOC Analyst Triage](docs/dashboards.md#soc-analyst-triage) | SOC analysts | What is happening, and where do I start? |
 | [Detection Inventory](docs/dashboards.md#detection-inventory) | Detection engineering | What detections exist, which are noisy, what changed? |
+| [Risk Based Kill Chain](docs/dashboards.md#risk-based-kill-chain) | SOC and detection engineering | Which sources are progressing through the kill chain right now? |
 
 ![Detection Health Overview](screenshots/detection-health-overview.png)
 
