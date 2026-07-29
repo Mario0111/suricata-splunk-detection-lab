@@ -32,7 +32,7 @@
       "dataSources": {
         "primary": "ds_Oap1Rb7I"
       },
-      "title": "Dtection Trends",
+      "title": "Detection Trends",
       "description": "Visualizes detection activity over time."
     },
     "viz_GqdAo2Zx": {
