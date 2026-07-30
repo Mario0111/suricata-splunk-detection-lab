@@ -4,7 +4,13 @@ I built this lab to practise the work a detection engineer actually does. Not ju
 
 Suricata 8 runs on an isolated VirtualBox network and ships EVE JSON to Splunk Enterprise through a Universal Forwarder. On top of that sit four dashboards, seven custom detections covering seven ATT&CK tactics, and a correlation search that ties them together.
 
-One rule I kept to throughout: investigate before tuning. Twice something unexpected showed up in the data, and both times I stopped building and worked out why before changing anything.
+One rule I kept to throughout: investigate before tuning. Three times something unexpected showed up in the data, and every time I stopped building and worked out why before changing anything.
+
+## Start here
+
+If you only read two things, read [COR-001](detections/COR-001-recon-to-exploit-chain.md) and [docs/investigations.md](docs/investigations.md). The correlation search is where the individual detections stop being a list and start describing an attack, and the investigations are the three times the lab did something I could not explain and I went and found out why. One of them is a false positive in my own command injection rule that only became visible because the correlation search combined it with other traffic.
+
+The rest is the build: [docs/architecture.md](docs/architecture.md) for how the pipeline fits together, [detections/](detections/) for the seven rules and the reasoning behind each, [docs/tuning.md](docs/tuning.md) for what I decided to do about the noise.
 
 ## Architecture
 
@@ -46,7 +52,7 @@ More detail in [docs/architecture.md](docs/architecture.md).
 
 **Four dashboards**, each aimed at one audience and one question rather than one dashboard trying to serve everyone: pipeline health, analyst triage, detection inventory, and a risk based kill chain view that sits on top of the correlation search. Covered in [docs/dashboards.md](docs/dashboards.md).
 
-**Two investigations** where the environment did something I did not expect, written up in [docs/investigations.md](docs/investigations.md).
+**Three investigations** where the environment did something I did not expect, written up in [docs/investigations.md](docs/investigations.md).
 
 ## Dashboards
 
@@ -56,6 +62,12 @@ More detail in [docs/architecture.md](docs/architecture.md).
 | [SOC Analyst Triage](docs/dashboards.md#soc-analyst-triage) | SOC analysts | What is happening, and where do I start? |
 | [Detection Inventory](docs/dashboards.md#detection-inventory) | Detection engineering | What detections exist, which are noisy, what changed? |
 | [Risk Based Kill Chain](docs/dashboards.md#risk-based-kill-chain) | SOC and detection engineering | Which sources are progressing through the kill chain right now? |
+
+The kill chain view is the one I would show first. The other three show alerts; this one ranks source IPs by how far through the kill chain they have actually got, off the same stage scoring the correlation search uses.
+
+![Risk Based Kill Chain](screenshots/risk-kill-chain.png)
+
+The pipeline health view behind it, which is where the project started and what everything else depends on being trustworthy:
 
 ![Detection Health Overview](screenshots/detection-health-overview.png)
 
@@ -85,7 +97,9 @@ A few parts of this project turned out more interesting than the setup work.
 
 **A correlation search caught a false positive in one of its own inputs.** While validating [COR-001](detections/COR-001-recon-to-exploit-chain.md), a test that should have stayed quiet fired, because my command injection rule was matching Splunk's own `&id=` search URLs as a backgrounded `id` command. The rule was wrong, not the traffic, so I fixed the pattern instead of suppressing it. Written up in [docs/investigations.md](docs/investigations.md) and [DET-002](detections/DET-002-command-injection.md).
 
-**An IDS alert proves attempt, not impact.** All four of my validation attacks returned the same harmless page, because the web root ignores the parameters I was injecting. Every rule fired anyway. That is correct behaviour, and understanding why matters more than it first appears. Covered in [docs/lessons-learned.md](docs/lessons-learned.md).
+**An IDS alert proves attempt, not impact.** My first validation attacks all came back with the same harmless page, because the web root ignores the parameters I was injecting. Every rule fired anyway. So I ran the traversal again against a sink that is genuinely vulnerable, Mutillidae's `page` parameter, and that one returned Metasploitable's real `/etc/passwd`. Identical alert, completely different outcome on the victim, which is the point: a request side signature reports intent and cannot report impact. Both runs are in [DET-003](detections/DET-003-directory-traversal.md#validation), the lesson in [docs/lessons-learned.md](docs/lessons-learned.md).
+
+![Leaked /etc/passwd from the LFI](screenshots/det-003-lfi-impact.png)
 
 ## Repository layout
 
@@ -94,7 +108,7 @@ docs/
   architecture.md      lab topology, sensor spec, pipeline design
   dashboards.md        all four dashboards with their SPL
   detections.md        signature inventory and detection index
-  investigations.md    the two investigations
+  investigations.md    the three investigations
   tuning.md            noise analysis and tuning decisions
   mitre-mapping.md     ATT&CK coverage
   lessons-learned.md

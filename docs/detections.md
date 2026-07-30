@@ -15,16 +15,18 @@ index=suricata sourcetype=suricata:eve event_type=alert
 |---|---|---|---|---|---|---|
 | 2221036 | SURICATA HTTP Response excessive header repetition | Suricata HTTP parser | Generic Protocol Command Decode | 3 | 5,162 | Benign. Caused by interaction with Splunk Web. Tuning candidate, see [tuning.md](tuning.md) |
 | 2069969 | ET WEB_SPECIFIC_APPS Splunk Enterprise Server Information Disclosure via REST API (CVE-2018-11409) | ET Open | Web Application Attack | 1 | 170 | Expected. Fires on Splunk REST API interaction |
-| 2221050 | SURICATA HTTP too many warnings | Suricata HTTP parser | Generic Protocol Command Decode | | 2 | Still open, no tuning applied. See [investigations.md](investigations.md) |
-| 1000002 | LOCAL WEB SQL Injection Attempt, UNION SELECT in URI | Custom | web-application-attack | | low | [DET-001](../detections/DET-001-sql-injection.md) |
-| 1000003 | LOCAL WEB Command Injection, shell metacharacter with command in URI | Custom | web-application-attack | | low | [DET-002](../detections/DET-002-command-injection.md) |
-| 1000004 | LOCAL WEB Directory Traversal, sensitive file access via URI | Custom | web-application-attack | | low | [DET-003](../detections/DET-003-directory-traversal.md) |
-| 1000005 | LOCAL WEB Suspicious User-Agent, known attack tool | Custom | web-application-attack | | low | [DET-004](../detections/DET-004-suspicious-user-agent.md) |
-| 1000006 | LOCAL WEB Reverse Shell Payload in HTTP Request | Custom | trojan-activity | | low | [DET-005](../detections/DET-005-reverse-shell.md) |
-| 1000007 | LOCAL WEB Web Shell Access | Custom | trojan-activity | | low | [DET-006](../detections/DET-006-web-shell.md) |
-| 1000008 | LOCAL WEB Login Brute Force Attempt | Custom | attempted-user | | low | [DET-007](../detections/DET-007-brute-force.md) |
-| 1000001 | LAB Suricata ICMP Detection Pipeline Test | Custom | none | | on demand | Pipeline test rule, not a threat detection |
-| various | SURICATA STREAM anomaly signatures | Suricata stream engine | Generic Protocol Command Decode | 3 | low | Normal TCP stream engine noise in a VM lab. Monitored, not tuned |
+| 2221050 | SURICATA HTTP too many warnings | Suricata HTTP parser | Generic Protocol Command Decode | not recorded | 2 | Still open, no tuning applied. See [investigations.md](investigations.md) |
+| 1000002 | LOCAL WEB SQL Injection Attempt, UNION SELECT in URI | Custom | web-application-attack | 1 | low | [DET-001](../detections/DET-001-sql-injection.md) |
+| 1000003 | LOCAL WEB Command Injection, shell metacharacter with command in URI | Custom | web-application-attack | 1 | low | [DET-002](../detections/DET-002-command-injection.md) |
+| 1000004 | LOCAL WEB Directory Traversal, sensitive file access via URI | Custom | web-application-attack | 1 | low | [DET-003](../detections/DET-003-directory-traversal.md) |
+| 1000005 | LOCAL WEB Suspicious User-Agent, known attack tool | Custom | web-application-attack | 1 | low | [DET-004](../detections/DET-004-suspicious-user-agent.md) |
+| 1000006 | LOCAL WEB Reverse Shell Payload in HTTP Request | Custom | trojan-activity | 1 | low | [DET-005](../detections/DET-005-reverse-shell.md) |
+| 1000007 | LOCAL WEB Web Shell Access | Custom | trojan-activity | 1 | low | [DET-006](../detections/DET-006-web-shell.md) |
+| 1000008 | LOCAL WEB Login Brute Force Attempt | Custom | attempted-user | 1 | low | [DET-007](../detections/DET-007-brute-force.md) |
+| 1000001 | LAB Suricata ICMP Detection Pipeline Test | Custom | none | 3 | on demand | Pipeline test rule, not a threat detection |
+| various | SURICATA STREAM anomaly signatures | Suricata stream engine | Generic Protocol Command Decode | 3 | low | Rolled up rather than enumerated. Normal TCP stream engine noise in a VM lab, monitored, not tuned |
+
+Severity is Suricata's rule priority, where 1 is most severe. I never set it explicitly on a custom rule. It comes from `classtype`, which maps to a priority in `classification.config`: `web-application-attack`, `trojan-activity` and `attempted-user` are all priority 1, and 1000001 has no classtype so it falls through to the default of 3. That is worth knowing when reading the severity KPI on the health dashboard, because it means every custom detection I have written currently looks equally urgent to an analyst sorting by severity. Splitting them apart, so a web shell outranks a scanner user agent, means either setting `priority:` on the rules directly or doing the ranking in Splunk, which is what [COR-001](../detections/COR-001-recon-to-exploit-chain.md) ended up doing with its stage scores.
 
 ## Custom detections
 
@@ -42,7 +44,7 @@ My rules live in `/var/lib/suricata/rules/local.rules` with SIDs starting at 100
 
 Each one was confirmed end to end: rule loaded cleanly, attack simulated from Kali, alert indexed and queried in Splunk.
 
-The seven detections span seven ATT&CK tactics, from reconnaissance through to credential access. DET-007 is the only rate based one, using a `detection_filter` to fire on a threshold rather than a single request. DET-005 is the only one that overlaps another on purpose, since a reverse shell is also a command injection and tripping both is a stronger signal than either alone.
+The seven detections span seven ATT&CK tactics, from reconnaissance through to persistence. DET-007 is the only rate based one, using a `detection_filter` to fire on a threshold rather than a single request. DET-005 is the only one that overlaps another on purpose, since a reverse shell is also a command injection and tripping both is a stronger signal than either alone.
 
 ## Correlation
 

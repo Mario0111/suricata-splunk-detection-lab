@@ -27,7 +27,9 @@ T1595.002 Recon  ->  T1190 Initial Access  ->  T1059 Execution  ->  T1083 Discov
                                                  \-> T1505.003 Persistence (web shell)
 ```
 
-A single source scanning and then exploiting will hit DET-004 followed by one or more of the exploitation and post exploitation rules. That sequence is what [COR-001](../detections/COR-001-recon-to-exploit-chain.md) watches for, and it is the reason the correlation search scores stage progression rather than alert count. COR-001 correlates all seven stages: a source crossing two or more is raised as a notable, ranked by risk and escalated to Critical the moment it reaches command and control or persistence. A partial chain still surfaces as High, so the search covers the short recon to exploit path and the full path to a dropped backdoor in one place.
+A single source scanning and then exploiting will hit DET-004 followed by one or more of the exploitation and post exploitation rules. That sequence is what [COR-001](../detections/COR-001-recon-to-exploit-chain.md) watches for, and it is the reason the correlation search scores stage progression rather than alert count.
+
+The diagram above branches, because a real attack does. COR-001 flattens it into a single numbered sequence, which is why its stage labels run in a slightly different order to this: the numbers there are a display order for a one row per source table, not a claim about which stage has to precede which. The reasoning for that ordering is [in the search writeup](../detections/COR-001-recon-to-exploit-chain.md#how-it-works). What actually triggers the search is the count of distinct stages, so neither ordering affects whether a chain fires. COR-001 correlates all seven stages: a source crossing two or more is raised as a notable, ranked by risk and escalated to Critical the moment it reaches command and control or persistence. A partial chain still surfaces as High, so the search covers the short recon to exploit path and the full path to a dropped backdoor in one place.
 
 ## Summary
 

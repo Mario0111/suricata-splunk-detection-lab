@@ -10,7 +10,8 @@ How I approach this: a suppression is an engineering decision, not a reflex. Eve
 | 2221050 | SURICATA HTTP too many warnings | 2 | Suricata HTTP parser, still under investigation | No tuning. Not enough evidence to act on |
 | 2069969 | ET Splunk REST API info disclosure (CVE-2018-11409) | 170 | Expected match on Splunk REST API interaction | Keep. Legitimate coverage and useful as a known good signal |
 | 1000003 | LOCAL WEB Command Injection | 8 FPs | `&id=` in Splunk URLs matched as "& id" | Rule corrected, `&` dropped from the class, rev:2. Section below |
-| 1000002, 1000004, 1000005 | My other custom detections | low | Attack simulation | No tuning. High signal, no false positives observed |
+| 1000002, 1000004, 1000005, 1000006, 1000007 | My other pattern matching detections | low | Attack simulation | No tuning. High signal, no false positives observed |
+| 1000008 | LOCAL WEB Login Brute Force | low | Attack simulation | No tuning applied, but the threshold is the tuning surface. Count 20 in 60 seconds is a lab default rather than a baselined figure. See [DET-007](../detections/DET-007-brute-force.md#tuning) |
 
 ## Proposal for SID 2221036
 

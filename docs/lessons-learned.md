@@ -22,9 +22,11 @@ The same failure taught me something more specific. Suricata tokenises rule opti
 
 ## An IDS alert proves attempt, not impact
 
-All four of my validation attacks returned the same default page, because Metasploitable's web root ignores the parameters I was injecting. Every rule fired anyway, and that is correct. Suricata inspects the request as it crosses the wire, so an alert means the attack was seen, not that the target was vulnerable or that anything succeeded.
+My first round of validation attacks all returned the same default page, because Metasploitable's web root ignores the parameters I was injecting. Every rule fired anyway, and that is correct. Suricata inspects the request as it crosses the wire, so an alert means the attack was seen, not that the target was vulnerable or that anything succeeded.
 
-The practical consequence is that you validate a detection by confirming the alert in Splunk, never by reading the HTTP response. Working out whether an attempt actually landed is analyst work that needs response context, and it is a separate question from whether the rule works.
+I proved the other half of that later, by aiming the traversal rule at Mutillidae's `page` parameter instead of the web root. That one is genuinely vulnerable, and the response came back with Metasploitable's real `/etc/passwd` in it. Same rule, same alert, completely different outcome on the victim. The two runs side by side are in [DET-003](../detections/DET-003-directory-traversal.md).
+
+That pair is the actual lesson. The rule output was identical whether the attack landed or not, so the alert cannot be telling you about impact, only about intent. The practical consequence is that you validate a detection by confirming the alert in Splunk, never by reading the HTTP response. Working out whether an attempt actually landed is analyst work that needs response context, and it is a separate question from whether the rule works.
 
 ## Your monitoring stack will monitor itself
 
@@ -32,7 +34,7 @@ The single loudest signature in the environment, by an order of magnitude, was S
 
 ## Split dashboards by audience
 
-Three dashboards over one index, each answering one question for one group of people, turned out far more usable than a single large one. Same reasoning SOCs use when they separate engineering tooling from analyst tooling.
+Four dashboards over one index, each answering one question for one group of people, turned out far more usable than a single large one. Same reasoning SOCs use when they separate engineering tooling from analyst tooling.
 
 ## Correlate on progression, not volume
 
@@ -44,4 +46,4 @@ I recorded decisions as I made them rather than reconstructing them later. The w
 
 ## What I would do next
 
-Finish the remaining detections on the roadmap to reach command and control, persistence and credential access. Get COR-001 running on a schedule and see how it behaves over a longer window. Close out SID 2221050. And apply one of the tuning options for 2221036 so the decision log has a real before and after in it rather than a proposal.
+Watch COR-001 over a longer window now that it is running on a schedule, and see whether a 60 minute rolling window is the right size once there is more than test traffic in it. Close out SID 2221050. Apply one of the tuning options for 2221036 so the decision log has a real before and after in it rather than a proposal. And extend the detection set past what a request side signature can see, since every rule here inspects the URI, which leaves POST bodies and anything after the shell connects out entirely uncovered.

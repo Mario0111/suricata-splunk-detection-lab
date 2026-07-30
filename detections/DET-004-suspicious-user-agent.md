@@ -9,7 +9,7 @@
 
 ## Background
 
-Most automated attack and recon tools announce themselves in the HTTP User-Agent header unless someone has bothered to change it. sqlmap, nikto, nmap's HTTP scripts, dirbuster and gobuster, wpscan, hydra, nuclei. Catching them is cheap and it is early: scanning usually happens before the targeted exploitation that the other three detections cover.
+Most automated attack and recon tools announce themselves in the HTTP User-Agent header unless someone has bothered to change it. sqlmap, nikto, nmap's HTTP scripts, dirbuster and gobuster, wpscan, hydra, nuclei. Catching them is cheap and it is early: scanning usually happens before the targeted exploitation that the rest of the detection set covers.
 
 This is the rule that tells you someone is trying doors rather than that they got one open.
 

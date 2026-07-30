@@ -9,7 +9,7 @@
 
 ## Background
 
-Brute force is not a single suspicious request, it is a rate. One failed login is normal, everyone mistypes a password. Twenty failed logins from one source in a minute is an attack. This is the first detection in the set where the signal is volume over time rather than the content of any single packet, so it needs a different tool than the pattern matches the other rules use.
+Brute force is not a single suspicious request, it is a rate. One failed login is normal, everyone mistypes a password. Twenty failed logins from one source in a minute is an attack. This is the only detection in the set where the signal is volume over time rather than the content of any single packet, so it needs a different tool than the pattern matches the other rules use.
 
 ## Rule design
 

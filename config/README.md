@@ -9,9 +9,12 @@ config/
   splunk-uf/outputs.conf    forwarding to the indexer on 10.10.10.40:9997
   splunk/indexes.conf       suricata index definition on the indexer
   splunk/savedsearches.conf the COR-001 scheduled correlation search
+  splunk/dashboards/        Dashboard Studio JSON for all four dashboards
 ```
 
-A couple of details worth pointing out.
+The dashboard exports are the full Dashboard Studio definitions, so every panel's exact SPL and layout is in the repo rather than only in the screenshots. They import directly into a Splunk instance that has a `suricata` index. The prose walkthrough of what each panel is for is in [docs/dashboards.md](../docs/dashboards.md).
+
+A couple of other details worth pointing out.
 
 The forwarder input (`splunk-uf/inputs.conf`) routes the EVE log to a dedicated `suricata` index with sourcetype `suricata:eve`. That named sourcetype is what gives the events their JSON field extraction on the indexer.
 
