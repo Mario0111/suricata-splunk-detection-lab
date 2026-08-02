@@ -122,3 +122,7 @@ screenshots/
 ```
 
 All work was done in an isolated lab against intentionally vulnerable systems.
+
+## License
+
+Released under the MIT License. See [LICENSE](LICENSE).
